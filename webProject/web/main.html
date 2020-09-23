@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>主界面</title>
+
+    <link rel="stylesheet" type="text/css" href="./main.css"/>
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.5.1/jquery.js"></script>
+</head>
+<body>
+
+<div id="main_frame">
+
+    <form method="post" id="myform" enctype="multipart/form-data">
+        <div style="position: relative;vertical-align: center">
+            <input type="file" id="photo" style="position: absolute; top: 0; bottom: 0; left: 0;right: 0; opacity: 0;"
+                   accept="image/png, image/jpeg, image/gif, image/jpg" onchange="showImg(this)"/>
+            <div style="text-align: center">
+                <span class="label_input" style="font-size: 15px">上传图片</span>
+                <img id="upload" src="./images/upload.png" style="width: 40px; height: 40px; vertical-align: middle;" />
+            </div>
+
+        </div>
+        <p><label class="label_input">用户名</label> <input type="text" id="username" class="text_field" readonly/></p>
+        <p><label class="label_input">昵称</label> <input type="text" id="nickname" class="text_field"/></p>
+
+        <p><input type="button" id="btn_update" value="提交修改"/></p>
+    </form>
+</div>
+<script type="text/javascript">
+    //加载照片
+    function loadPhoto(){
+        var photo = localStorage["photo"];
+        console.log(photo)
+        if(photo != "" && photo != null){
+            document.getElementById("upload").src = "./" + photo;
+        }else{
+            return;
+        }
+    }
+
+    //对标签赋值
+    $('#username').val(localStorage["username"]);
+    $('#nickname').val(localStorage["nickname"]);
+    loadPhoto();
+
+    //提交修改前检查表单是否被编辑过
+    $("#myform").change(function(){
+        $("#myform").data("changed",true);
+    });
+    //提交修改
+    $('#btn_update').click(function() {
+        if ($("#myform").data("changed") !== true) {
+            alert("信息未被修改。");
+            return;
+        }else{
+            var username = $('#username').val();
+            var nickname = $('#nickname').val();
+            var file = document.getElementById("photo").files[0];
+            var form = new FormData();
+            if(file == null){
+                form.append("photo", new Blob(), "");
+            }else{
+                form.append("photo", file, file.filename);
+            }
+            form.append("username", username);
+            form.append("nickname", nickname);
+            $.ajax({
+                url: "/update",
+                method: "POST",
+                timeout: 0,  //0是没有超时，一直阻塞
+                // headers: {
+                //     "Content-Type": "multipart/form-data;boundary='----'"
+                // },
+                processData: false,
+                //mimeType: "multipart/form-data",
+                contentType: false,
+                data: form,
+                dataType: "json",
+                success:function (Data) {
+                    if(Data.Err == 0){
+                        alert("修改成功！");
+                    }else{
+                        console.log(Data);
+                        if(Data.Err == 1){
+                            alert("请重新登录！");
+                            window.location.href = "index.html";
+                        }else{
+                            alert("修改失败！");
+                        }
+                    }
+                }
+            });
+            $("#myform").data("changed",false);
+        }
+    });
+
+    //上传图片并显示
+    function showImg(input) {
+        var file = input.files[0];
+        var reader = new FileReader();
+        // 图片读取成功回调函数
+        reader.onload = function(e) {
+            document.getElementById('upload').src=e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+</script>
+
+</body>
+</html>
